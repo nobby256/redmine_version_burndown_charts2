@@ -10,7 +10,7 @@ class VersionBurndownChartsController < ApplicationController
     @graph =
       open_flash_chart_object( 880, 450,
         url_for( :action => 'get_graph_data', :project_id => @project.id, :version_id => @version.id ),
-          true, "#{relative_url_path}/" )
+          true, "#{relative_url_path}/plugin_assets/open_flash_chart/" )
   end
 
   def get_graph_data
@@ -39,8 +39,13 @@ class VersionBurndownChartsController < ApplicationController
         next
       elsif index_date == @start_date || index_date == @version.due_date
         x_labels_data << index_date.strftime("%m/%d")
-      elsif @sprint_range > 20 && count % (@sprint_range / 3).round != 0
-         x_labels_data << ""
+      elsif @sprint_range > 20
+        period = count % (@sprint_range / 3).round
+        if (period != 0) || (period == 3)
+          x_labels_data << ""
+        else
+          x_labels_data << index_date.strftime("%m/%d")
+        end
       else
         x_labels_data << index_date.strftime("%m/%d")
       end
@@ -247,7 +252,7 @@ class VersionBurndownChartsController < ApplicationController
       render :action => "index" and return false
     end
 
-    @sprint_range = @version.due_date - @start_date + 1
+    @sprint_range = (@version.due_date - @start_date + 1).to_i
 
     logger.debug("@start_date #{@start_date}")
     logger.debug("@version.due_date #{@version.due_date}")

@@ -1,14 +1,12 @@
 require 'redmine'
 
-Redmine::Plugin.register :redmine_version_burndown do
-  name 'Redmine Version Burndown Charts plugin'
-  author 'Dai Fujihara'
+Redmine::Plugin.register :redmine_version_burndown2 do
+  name 'Redmine Version Burndown Charts plugin2'
+  author 'Nobby256'
   description 'Version Burndown Charts Plugin is graphical chart plugin for Scrum.'
-  author_url 'http://daipresents.com/weblog/fujihalab/'
-  url 'http://daipresents.com/weblog/fujihalab/archives/2010/02/redmine-version-burndown-charts-plugin-release.php '
 
-  requires_redmine :version_or_higher => '0.9.0'
-  version '0.0.5'
+  requires_redmine :version_or_higher => '2.3.0'
+  version '0.0.1'
 
   project_module :version_burndown_charts do
     permission :version_burndown_charts_view, :version_burndown_charts => :index
