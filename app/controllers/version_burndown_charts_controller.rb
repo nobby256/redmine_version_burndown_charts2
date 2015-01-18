@@ -49,7 +49,6 @@ class VersionBurndownChartsController < ApplicationController
       else
         x_labels_data << index_date.strftime("%m/%d")
       end
-      
       estimated_data_array << round(index_estimated_hours -= calc_estimated_hours_by_date(index_date))
       index_performance_hours = calc_performance_hours_by_date(index_date)
       performance_data_array << round(@estimated_hours - index_performance_hours)
@@ -235,9 +234,11 @@ class VersionBurndownChartsController < ApplicationController
 
   def find_version_issues
     @version_issues = Issue.find_by_sql([
-          "select * from issues
-             where fixed_version_id = :version_id and start_date is not NULL and
-               estimated_hours is not NULL order by start_date asc",
+          "select t1.* from issues t1 join 
+                             (select * from issues where fixed_version_id = :version_id and exists (select * from trackers where issues.tracker_id=trackers.id and trackers.is_in_roadmap=1)) t2
+                           on (t1.lft between t2.lft and t2.rgt) and (t1.rgt between t2.lft and t2.rgt)
+                             where t1.fixed_version_id = :version_id and t1.start_date is not NULL and
+                                   t1.estimated_hours is not NULL order by t1.start_date asc",
                  {:version_id => @version.id}])
     if @version_issues.empty?
       flash[:error] = l(:version_burndown_charts_issues_not_found, :version_name => @version.name)
@@ -262,11 +263,17 @@ class VersionBurndownChartsController < ApplicationController
   def find_version_info
     @closed_pourcent = (@version.closed_pourcent * 100).round / 100
     @open_pourcent = 100 - @closed_pourcent
-    unless @version.estimated_hours
+    roadmap_issues = Issue.find_by_sql([
+          "select sum(estimated_hours) as roadmap_estimated_hours from issues
+              where fixed_version_id = :version_id and 
+                    exists (select * from trackers where issues.tracker_id=trackers.id and trackers.is_in_roadmap=1) and
+                    start_date is not NULL and estimated_hours is not NULL",
+                 {:version_id => @version.id}])
+    @estimated_hours = round(roadmap_issues.first.roadmap_estimated_hours.to_f)
+    if @estimated_hours == 0
       flash[:error] = l(:version_burndown_charts_issues_start_date_or_estimated_date_not_found, :version_name => @version.name)
       render :action => "index" and return false
     end
-    @estimated_hours = round(@version.estimated_hours)
     logger.debug("@estimated_hours #{@estimated_hours}")
   end
 
